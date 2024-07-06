@@ -1,13 +1,58 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.relative .text-blue-600 {
+  color: #0078d7;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.relative .text-blue-600:hover {
+  color: #005bb5;
+}
+
+button .svg-inline--fa {
+  width: 1em;
+  height: 1em;
+}
+
+.input-with-icons {
+  padding-left: 2.5rem; /* Adjust padding to fit the left icon */
+  padding-right: 2.5rem; /* Adjust padding to fit the right icon */
+}
+
+input:focus {
+  outline: none;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+input[type="text"] {
+  outline: none;
+  width: 100%;
+  padding: 10px 15px;
+  border-radius: 25px;
+  border: 1px solid #ccc;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+button:focus {
+  outline: none;
+}
+
+button:active {
+  opacity: 0.8;
+}
+
+.shadow-inner {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
 }
