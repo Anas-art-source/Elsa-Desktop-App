@@ -1,18 +1,181 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './index.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMicrophone, faVideo, faCamera, faPaperclip, faPaperPlane, faStop, faVolumeUp } from '@fortawesome/free-solid-svg-icons';
+import { faMicrophone, faVideo, faCamera, faPaperclip, faPaperPlane, faStop, faVolumeUp, faBolt } from '@fortawesome/free-solid-svg-icons';
 import { Switch } from '@headlessui/react';
+// import ProactiveScreen from './ProactiveScreen'; // Import the new component
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+// import { faMicrophone, faStop } from '@fortawesome/free-solid-svg-icons';
+
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faComments, faTimes } from '@fortawesome/free-solid-svg-icons';
+// const { ipcRenderer } = window.require('electron');
+const ProactiveScreen = ({ setIsProactive, onMinimize, onSubmit }) => {
+  const [input, setInput] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [input]);
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  const toggleRecording = () => {
+    setIsRecording(!isRecording);
+    if (!isRecording) {
+      setInput('');
+    }
+  };
+
+  const handleSubmit = () => {
+    if (input.trim() || isRecording) {
+      onSubmit(isRecording ? "Audio input" : input);
+      setInput('');
+      setIsRecording(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-600 to-indigo-700 flex flex-col">
+      <div className="flex items-center justify-between p-6">
+        <h2 className="text-white font-bold text-2xl">Proactive Mode</h2>
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <span className="text-white font-medium">Proactive</span>
+            <Switch
+              checked={true}
+              onChange={() => setIsProactive(false)}
+              className={`${true ? 'bg-green-500' : 'bg-gray-300'} relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+            >
+              <span className={`${true ? 'translate-x-6' : 'translate-x-1'} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`} />
+            </Switch>
+          </div>
+          {/* <button onClick={onMinimize} className="text-white hover:text-gray-200 transition-colors">
+            <FontAwesomeIcon icon={faTimes} size="lg" />
+          </button> */}
+        </div>
+      </div>
+      <div className="flex-grow flex items-center justify-center px-6">
+        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8">
+          <h3 className="text-2xl font-semibold text-gray-800 mb-6">What's your goal?</h3>
+          <div className="relative">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Enter your goal..."
+              className={`w-full p-4 pr-12 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition-all text-lg ${isRecording ? 'opacity-0' : 'opacity-100'}`}
+              rows="3"
+            />
+            <div className="absolute right-3 bottom-3 flex items-center space-x-2">
+              {input.trim() ? (
+                <button
+                  onClick={handleSubmit}
+                  className="p-3 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                >
+                  <FontAwesomeIcon icon={faPaperPlane} size="lg" />
+                </button>
+              ) : (
+                <button
+                  onClick={toggleRecording}
+                  className={`p-3 rounded-full ${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white transition-colors`}
+                >
+                  <FontAwesomeIcon icon={isRecording ? faStop : faMicrophone} size="lg" />
+                </button>
+              )}
+            </div>
+          </div>
+          {isRecording && (
+            <div className="text-center py-6 text-indigo-600 font-semibold animate-pulse text-xl">
+              Recording... Speak your goal
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [isProactive, setIsProactive] = useState(false);
+  // const [isProactive, setIsProactive] = useState(false);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [isRecordingVideo, setIsRecordingVideo] = useState(false);
   const mediaRecorderRef = useRef(null);
   const videoChunksRef = useRef([]);
   const audioChunksRef = useRef([]);  // Add this line to define audioChunksRef
+  const fileInputRef = useRef(null);
+  const [textAreaHeight, setTextAreaHeight] = useState('auto');
+  const textAreaRef = useRef(null);
+  const [notification, setNotification] = useState(null);
+
+  // const [isProactive, setIsProactive] = useState(false);
+  // const [isProactive, setIsProactive] = useState(false);
+  const [isProactive, setIsProactive] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const handleMinimize = () => {
+    // setIsMinimized(true);
+    window.electron.minimizeApp();
+
+  };
+
+  const handleMaximize = () => {
+    setIsMinimized(false);
+  };
+
+  const showNotification = (title, body) => {
+    if (window.electron) {
+      // We're in Electron
+      window.electron.showNotification(title, body);
+    } else {
+      // We're in a browser, fallback to alert
+      alert(`${title}: ${body}`);
+    }
+  };
+
+  const handleSubmit = (goal) => {
+    console.log("Submitting goal:", goal);
+    // Minimize the app
+    handleMinimize();
+    
+    // Simulate backend response
+    setTimeout(() => {
+      showNotification('ELSA Response', 'This is a response from the backend');
+    }, 2000);
+  };
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000); // Hide notification after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+
+
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'auto';
+      const scrollHeight = textAreaRef.current.scrollHeight;
+      textAreaRef.current.style.height = scrollHeight + 'px';
+      setTextAreaHeight(scrollHeight <= 100 ? 'auto' : '100px');
+    }
+  }, [input]);
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
 
   const handleSendMessage = () => {
     if (input.trim() === '') return;
@@ -27,9 +190,21 @@ function App() {
     }, 1000);
   };
 
-  const handleInputChange = (e) => {
-    setInput(e.target.value);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const newMessage = { text: `File uploaded: ${file.name}`, sender: 'user', fileUrl: url };
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+    }
   };
+
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -180,81 +355,102 @@ function App() {
 
   
   return (
-    <div className="h-screen w-screen bg-gray-100 flex">
-      <div className="w-full h-full bg-white shadow-lg flex flex-col">
-        <div className="p-4 bg-blue-600 text-white flex justify-between items-center">
-          <span>Chat Application</span>
-          <div className="flex items-center">
-            <span className="mr-2">Proactive mode</span>
+    <div className="h-screen w-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
+         {isProactive ?  (
+          <ProactiveScreen 
+            setIsProactive={setIsProactive} 
+            onMinimize={handleMinimize}
+            onSubmit={handleSubmit}
+          />
+        
+      ): (
+      <div className="w-full h-full bg-white flex flex-col overflow-hidden shadow-2xl">
+        <div className="p-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center">
+          <span className="text-3xl font-bold tracking-wide">Elsa</span>
+          <div className="flex items-center bg-white bg-opacity-20 rounded-full px-4 py-2">
+            <span className="mr-3 text-sm font-medium">Proactive mode</span>
             <Switch
               checked={isProactive}
-              onChange={setIsProactive}
+              onChange={(checked) => {
+                setIsProactive(checked);
+                // Reset messages when switching modes
+                setMessages([]);
+              }}
               className={`${
-                isProactive ? 'bg-blue-400' : 'bg-gray-200'
-              } relative inline-flex items-center h-6 rounded-full w-11`}
+                isProactive ? 'bg-indigo-400' : 'bg-gray-300'
+              } relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
             >
               <span
                 className={`${
-                  isProactive ? 'translate-x-5' : 'translate-x-0'
+                  isProactive ? 'translate-x-6' : 'translate-x-1'
                 } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
               />
             </Switch>
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.map((msg, index) => (
-            <div key={index} className={`mb-2 p-2 ${msg.sender === 'user' ? 'bg-blue-200 text-right' : 'bg-gray-200'}`}>
-              {msg.text && <p>{msg.text}</p>}
-              {msg.imageUrl && <img src={msg.imageUrl} alt="Screenshot" className="w-full mt-2" />}
-              {msg.videoUrl && (
-                <div className="mt-2">
-                  <video controls src={msg.videoUrl} className="w-full" />
-                </div>
-              )}
-              {msg.audioUrl && (
-                <div className="mt-2">
-                  <audio controls src={msg.audioUrl} className="w-full" />
-                </div>
-              )}
+            <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[70%] p-4 rounded-2xl shadow-md ${
+                msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {msg.text && <p className="text-sm leading-relaxed break-words">{msg.text}</p>}
+                {msg.imageUrl && <img src={msg.imageUrl} alt="Screenshot" className="mt-3 rounded-lg" />}
+                {msg.videoUrl && <video controls src={msg.videoUrl} className="mt-3 rounded-lg" />}
+                {msg.audioUrl && <audio controls src={msg.audioUrl} className="mt-3 w-full" />}
+              </div>
             </div>
           ))}
         </div>
-        <div className="p-4 bg-gray-200 flex items-center">
-          <button
-            className={`p-2 rounded-full ${isRecordingAudio ? 'bg-red-600' : 'bg-red-400'} text-white`}
-            onClick={isRecordingAudio ? stopAudioRecording : startAudioRecording}
-            disabled={isRecordingVideo}
-          >
-            <FontAwesomeIcon icon={faMicrophone} />
+        <div className="p-6 bg-white border-t border-gray-200 flex items-end space-x-4">
+          <button className="p-3 text-gray-500 hover:text-blue-500 transition-colors focus:outline-none" onClick={triggerFileInput}>
+            <FontAwesomeIcon icon={faPaperclip} className="text-xl" />
           </button>
-          <button
-            className={`p-2 rounded-full ${isRecordingVideo ? 'bg-red-600' : 'bg-red-400'} text-white ml-2`}
-            onClick={isRecordingVideo ? stopVideoRecording : startVideoRecording}
-            disabled={isRecordingAudio}
-          >
-            <FontAwesomeIcon icon={faVideo} />
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+          <div className="flex-1 relative">
+            <textarea
+              ref={textAreaRef}
+              className="w-full p-4 pr-12 bg-gray-100 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none"
+              style={{ height: textAreaHeight, maxHeight: '100px', overflowY: 'auto' }}
+              value={input}
+              onChange={handleInputChange}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Chat with Elsa"
+              rows={1}
+            />
+            <button 
+              className="absolute right-3 bottom-3 p-2 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none" 
+              onClick={input.trim() ? handleSendMessage : isRecordingAudio ? stopAudioRecording : startAudioRecording}
+            >
+              <FontAwesomeIcon icon={input.trim() ? faPaperPlane : (isRecordingAudio ? faStop : faMicrophone)} className="text-xl" />
+            </button>
+          </div>
+          <button className="p-3 text-green-500 hover:text-green-600 transition-colors focus:outline-none" onClick={captureScreenshot}>
+            <FontAwesomeIcon icon={faCamera} className="text-xl" />
           </button>
-          <button
-            className="p-2 rounded-full bg-green-500 text-white ml-2"
-            onClick={captureScreenshot}
-          >
-            <FontAwesomeIcon icon={faCamera} />
-          </button>
-          <input
-            className="flex-1 ml-2 p-2 border border-gray-300 rounded"
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-          />
-          <button
-            className="p-2 rounded-full bg-blue-500 text-white ml-2"
-            onClick={handleSendMessage}
-          >
-            <FontAwesomeIcon icon={faPaperPlane} />
+          <button className="p-3 text-blue-500 hover:text-blue-600 transition-colors focus:outline-none" onClick={isRecordingVideo ? stopVideoRecording : startVideoRecording}>
+            <FontAwesomeIcon icon={isRecordingVideo ? faStop : faVideo} className="text-xl" />
           </button>
         </div>
       </div>
+      )}
+
+      {notification && (
+        <div className="fixed top-4 right-4 bg-white p-4 rounded-lg shadow-lg max-w-sm">
+          <button 
+            onClick={() => setNotification(null)}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+          <p>{notification}</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,5 +10,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
   minimizeApp: () => ipcRenderer.send('minimize-app'),
   getSources: async (options) => ipcRenderer.invoke('get-sources', options),
-  saveVideo: async (buffer) => ipcRenderer.invoke('save-video', buffer)
+  saveVideo: async (buffer) => ipcRenderer.invoke('save-video', buffer),
+  showNotification: (title, body) => ipcRenderer.send('show-notification', { title, body }),
+
 });

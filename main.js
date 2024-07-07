@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, desktopCapturer, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { Buffer } = require('buffer'); // Import Buffer
@@ -60,4 +60,9 @@ ipcMain.handle('save-audio', async (event, arrayBuffer) => {
   const filePath = path.join(desktopPath, 'recorded-audio.webm');
   fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
   return filePath;
+});
+
+
+ipcMain.on('show-notification', (event, { title, body }) => {
+  new Notification({ title, body }).show();
 });
