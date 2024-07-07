@@ -177,29 +177,94 @@ function App() {
   };
 
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (input.trim() === '') return;
-
+  
     const newMessage = { text: input, sender: 'user' };
     setMessages([...messages, newMessage]);
     setInput('');
+  
+    try {
+      // Show a loading message
+      setMessages(prevMessages => [...prevMessages, { text: 'Thinking...', sender: 'bot', isLoading: true }]);
+  
+      const response = await fetch(`http://127.0.0.1:8000/generate_reactive_response/?query=${encodeURIComponent(input)}`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
 
-    setTimeout(() => {
-      const receivedMessage = { text: 'This is a placeholder response', sender: 'bot' };
+      console.log("DATA: ", data)
+  
+      // Remove the loading message
+      setMessages(prevMessages => prevMessages.filter(msg => !msg.isLoading));
+  
+      // Add the bot's response
+      const receivedMessage = { text: data, sender: 'bot' };
       setMessages(prevMessages => [...prevMessages, receivedMessage]);
-    }, 1000);
-  };
-
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const newMessage = { text: `File uploaded: ${file.name}`, sender: 'user', fileUrl: url };
-      setMessages(prevMessages => [...prevMessages, newMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      
+      // Remove the loading message
+      setMessages(prevMessages => prevMessages.filter(msg => !msg.isLoading));
+  
+      // Add an error message
+      const errorMessage = { text: 'Sorry, there was an error processing your request.', sender: 'bot', isError: true };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
     }
   };
 
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        // Get the file path
+        const filePath = file.path;
+  
+        // Show a loading message
+        setMessages(prevMessages => [...prevMessages, { text: 'Configuring knowledge base...', sender: 'bot', isLoading: true }]);
+  
+        // Send the file path to the backend
+        const response = await fetch(`http://127.0.0.1:8000/configure_knowledgebase_directory/?directory=${encodeURIComponent(filePath)}`, {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        // Remove the loading message
+        setMessages(prevMessages => prevMessages.filter(msg => !msg.isLoading));
+  
+        // Add a success message
+        const newMessage = { text: `Knowledge base configured with file: ${file.name}`, sender: 'bot' };
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+      } catch (error) {
+        console.error('Error:', error);
+        
+        // Remove the loading message
+        setMessages(prevMessages => prevMessages.filter(msg => !msg.isLoading));
+  
+        // Add an error message
+        const errorMessage = { text: 'Sorry, there was an error configuring the knowledge base.', sender: 'bot', isError: true };
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+      }
+    }
+  };
+  
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
@@ -403,11 +468,18 @@ function App() {
           ))}
         </div>
         <div className="p-6 bg-white border-t border-gray-200 flex items-end space-x-4">
-          <button className="p-3 text-gray-500 hover:text-blue-500 transition-colors focus:outline-none" onClick={triggerFileInput}>
-            <FontAwesomeIcon icon={faPaperclip} className="text-xl" />
-          </button>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-          <div className="flex-1 relative">
+        <button className="p-3 text-gray-500 hover:text-blue-500 transition-colors focus:outline-none" onClick={triggerFileInput}>
+          <FontAwesomeIcon icon={faPaperclip} className="text-xl" />
+        </button>
+          <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              webkitdirectory="true" 
+              directory="true"
+            />         
+         <div className="flex-1 relative">
             <textarea
               ref={textAreaRef}
               className="w-full p-4 pr-12 bg-gray-100 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none"
